@@ -315,6 +315,7 @@ export function useBlockAnswerTarget(
         text: answer.text,
         selection: answer.selection,
       });
+      if (target.kind === "thread") sheet.focusComposer();
     },
     [sheet, stateKey, mode, target, position],
   );
