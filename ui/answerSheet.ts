@@ -339,6 +339,21 @@ export class AnswerSheet {
     this.commit([block]);
   }
 
+  /**
+   * Puts the caret in the composer after a pick, so Enter sends the answers.
+   * Left alone while the user is typing in or dragging a field of the block:
+   * focus moving there would take their keystrokes away.
+   */
+  focusComposer(): void {
+    const composer = this.composer();
+    if (composer === null || keepsFocus(document.activeElement)) return;
+    try {
+      composer.focus();
+    } catch {
+      // The composer left the screen: nothing to focus.
+    }
+  }
+
   /** The composer the sheet writes to: the first attached. */
   private composer(): PluginComposerApi | null {
     return this.attached[0]?.composer ?? null;
@@ -409,6 +424,18 @@ export class AnswerSheet {
     const saved: Saved = { entries: this.entries, written: this.written, base: this.base, sending: this.sending };
     writeItem(this.storageKey, saved);
   }
+}
+
+const PICK_INPUTS = new Set(["button", "checkbox", "radio", "submit", "reset"]);
+
+/** Whether `element` takes keystrokes of its own: a text field, a slider, or an app's frame. */
+function keepsFocus(element: Element | null): boolean {
+  if (element === null) return false;
+  if (element instanceof HTMLInputElement) return !PICK_INPUTS.has(element.type);
+  if (element instanceof HTMLTextAreaElement || element instanceof HTMLIFrameElement) return true;
+  if (element instanceof HTMLElement && element.isContentEditable) return true;
+  const role = element.getAttribute("role");
+  return role === "slider" || role === "textbox" || role === "spinbutton";
 }
 
 const SHEETS = new Map<string, AnswerSheet>();
